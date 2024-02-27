@@ -1,0 +1,45 @@
+import xarray as xr
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+
+# Defining California's bounding box
+lat_min = 32.5
+lat_max = 42.0
+lon_min = -124.5
+lon_max = -114.0
+
+ds = xr.open_dataset('GLDAS_NOAH025_M.A201508.021.nc4')
+humidity_variable_name = 'Qair_f_inst'  # Replace with your actual variable name
+
+#Selecting Humidity
+humidity = ds[humidity_variable_name]
+
+# Subset the data for California using the bounding box
+california_humidity = humidity.sel(lat=slice(lat_min, lat_max), lon=slice(lon_min, lon_max))
+
+# Calculate the mean specific humidity for August 2015
+mean_california_humidity = california_humidity.mean(dim='time')
+
+fig = plt.figure(figsize=(10, 7))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=ccrs.PlateCarree())
+
+# Adding state borders
+ax.add_feature(cfeature.STATES.with_scale('10m'))
+ax.coastlines('10m', edgecolor='black')
+
+
+pcm = mean_california_humidity.plot(ax=ax, cmap='jet', transform=ccrs.PlateCarree(), add_colorbar=False)
+cbar = plt.colorbar(pcm, ax=ax, orientation='vertical')
+cbar.set_label('Specific Humidity (kg/kg-1)')
+
+ax.set_title('Mean Specific Humidity in California for August 2015')
+ax.set_xlabel('Longitude')
+ax.set_ylabel('Latitude')
+
+plt.show()
+
+# Close the dataset
+ds.close()
+
